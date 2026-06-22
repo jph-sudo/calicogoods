@@ -1,5 +1,3 @@
-//export const dynamic = 'force-dynamic';
-
 import React from 'react';
 
 const EBAY_CLIENT_ID = process.env.EBAY_CLIENT_ID || "";
