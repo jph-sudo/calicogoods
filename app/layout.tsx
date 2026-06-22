@@ -6,6 +6,9 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Calico Goods',
   description: 'Professional console refurbishment with a focus on sustainability.',
+  icons: {
+    icon: '/favicon.ico', // Ensure this matches your file in the public folder
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
