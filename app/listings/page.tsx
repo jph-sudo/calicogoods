@@ -1,6 +1,6 @@
 import React from 'react';
 
-const EBAY_CLIENT_ID = process.env.EBAY_CLIENT_ID || "CalicoGo-CalicoGo-PRD-4a925d38d-87ea5e8d";
+const EBAY_CLIENT_ID = process.env.EBAY_CLIENT_ID || "";
 const EBAY_CLIENT_SECRET = process.env.EBAY_CLIENT_SECRET || "";
 const EBAY_SELLER_NAME = "calico-goods";
 
