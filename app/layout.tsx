@@ -1,12 +1,17 @@
+import type { Metadata } from 'next';
 import Navbar from '../components/Navbar';
 import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'Calico Goods',
+  description: 'Professional console refurbishment with a focus on sustainability.',
+};
 
 // app/layout.tsx
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      {/* Set the background to your new F0EEE4 color */}
-      <body className="bg-[#F0EEE4] font-sans text-[#36454F]"> 
+      <body> 
         <Navbar />
         {children}
       </body>
