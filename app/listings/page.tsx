@@ -1,47 +1,68 @@
-"use client";
+import React from 'react';
 
-import { useEffect, useState } from 'react';
+const EBAY_CLIENT_ID = process.env.EBAY_CLIENT_ID || "CalicoGo-CalicoGo-PRD-4a925d38d-87ea5e8d";
+const EBAY_CLIENT_SECRET = process.env.EBAY_CLIENT_SECRET || "";
+const EBAY_SELLER_NAME = "calico-goods";
 
 interface EbayItem {
+  itemId: string;
   title: string;
-  link: string;
+  itemWebUrl: string;
 }
 
-export default function Listings() {
-  const [listings, setListings] = useState<EbayItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+async function getEbayToken() {
+  const credentials = Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64');
+  
+  const response = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${credentials}`
+    },
+    body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
+  });
 
-  useEffect(() => {
-    const ebaySellerName = 'calico-goods';
-    const ebayRssUrl = `https://www.ebay.com/sch/i.html?_ssn=${ebaySellerName}&_rss=1`;
-    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(ebayRssUrl)}`;
+  if (!response.ok) {
+    throw new Error('Failed to fetch eBay OAuth token');
+  }
 
-    fetch(apiUrl)
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'ok') {
-          if (data.items && data.items.length > 0) {
-            setListings(data.items);
-          } else {
-            setErrorMessage("Store found, but there are 0 active listings.");
-          }
-        } else {
-          setErrorMessage(`API Error: ${data.message || 'Could not parse RSS feed.'}`);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        setErrorMessage(`Network Error: ${err.message}`);
-        setLoading(false);
-      });
-  }, []);
+  const data = await response.json();
+  return data.access_token;
+}
+
+async function fetchListings() {
+  const token = await getEbayToken();
+  const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=*&filter=sellers:{${EBAY_SELLER_NAME}}`;
+
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+    },
+    next: { revalidate: 3600 } 
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch eBay listings');
+  }
+
+  const data = await response.json();
+  return data.itemSummaries || [];
+}
+
+export default async function Listings() {
+  let listings: EbayItem[] = [];
+  let errorMessage: string | null = null;
+
+  try {
+    listings = await fetchListings();
+  } catch (error) {
+    errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+  }
 
   return (
     <main className="min-h-screen p-8">
       <h1 className="text-3xl font-bold mb-6">Inventory</h1>
-      
-      {loading && <p>Loading inventory...</p>}
       
       {errorMessage && (
         <div style={{ padding: '15px', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', border: '1px solid #f87171' }}>
@@ -49,16 +70,20 @@ export default function Listings() {
         </div>
       )}
 
-      {!loading && !errorMessage && (
+      {!errorMessage && listings.length === 0 && (
+        <p>No listings found for this store.</p>
+      )}
+
+      {!errorMessage && listings.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-          {listings.map((item, index) => (
-            <div key={index} style={{ border: '1px solid #ccc', padding: '15px', width: '250px', borderRadius: '8px' }}>
+          {listings.map((item) => (
+            <div key={item.itemId} style={{ border: '1px solid #ccc', padding: '15px', width: '250px', borderRadius: '8px' }}>
               <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>
-                <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#333' }}>
+                <a href={item.itemWebUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#333' }}>
                   {item.title}
                 </a>
               </h4>
-              <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '8px 12px', background: '#0064d2', color: 'white', textDecoration: 'none', borderRadius: '4px', fontWeight: 'bold' }}>
+              <a href={item.itemWebUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '8px 12px', background: '#0064d2', color: 'white', textDecoration: 'none', borderRadius: '4px', fontWeight: 'bold' }}>
                 View on eBay
               </a>
             </div>
