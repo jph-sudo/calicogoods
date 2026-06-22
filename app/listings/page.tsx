@@ -10,7 +10,7 @@ interface EbayItem {
 export default function Listings() {
   const [listings, setListings] = useState<EbayItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const ebaySellerName = 'calico-goods';
@@ -20,16 +20,19 @@ export default function Listings() {
     fetch(apiUrl)
       .then(response => response.json())
       .then(data => {
-        if (data.status === 'ok' && data.items.length > 0) {
-          setListings(data.items);
+        if (data.status === 'ok') {
+          if (data.items && data.items.length > 0) {
+            setListings(data.items);
+          } else {
+            setErrorMessage("Store found, but there are 0 active listings.");
+          }
         } else {
-          setError(true);
+          setErrorMessage(`API Error: ${data.message || 'Could not parse RSS feed.'}`);
         }
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching eBay listings:', err);
-        setError(true);
+        setErrorMessage(`Network Error: ${err.message}`);
         setLoading(false);
       });
   }, []);
@@ -39,22 +42,29 @@ export default function Listings() {
       <h1 className="text-3xl font-bold mb-6">Inventory</h1>
       
       {loading && <p>Loading inventory...</p>}
-      {error && <p>Failed to load listings.</p>}
+      
+      {errorMessage && (
+        <div style={{ padding: '15px', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', border: '1px solid #f87171' }}>
+          <strong>Error Details:</strong> {errorMessage}
+        </div>
+      )}
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-        {listings.map((item, index) => (
-          <div key={index} style={{ border: '1px solid #ccc', padding: '15px', width: '250px', borderRadius: '8px' }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>
-              <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#333' }}>
-                {item.title}
+      {!loading && !errorMessage && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+          {listings.map((item, index) => (
+            <div key={index} style={{ border: '1px solid #ccc', padding: '15px', width: '250px', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>
+                <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#333' }}>
+                  {item.title}
+                </a>
+              </h4>
+              <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '8px 12px', background: '#0064d2', color: 'white', textDecoration: 'none', borderRadius: '4px', fontWeight: 'bold' }}>
+                View on eBay
               </a>
-            </h4>
-            <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '8px 12px', background: '#0064d2', color: 'white', textDecoration: 'none', borderRadius: '4px', fontWeight: 'bold' }}>
-              View on eBay
-            </a>
-          </div>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }
