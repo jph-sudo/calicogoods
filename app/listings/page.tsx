@@ -40,7 +40,7 @@ async function getEbayToken() {
 
 async function fetchListings() {
   const token = await getEbayToken();
-  const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=*&filter=sellers:{${EBAY_SELLER_NAME}}`;
+  const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?filter=sellers:{${EBAY_SELLER_NAME}}`;
 
   const response = await fetch(url, {
     headers: {
