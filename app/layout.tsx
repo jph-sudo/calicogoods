@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Calico Goods',
   description: 'Professional console refurbishment with a focus on sustainability.',
   icons: {
-    icon: '/favicon.ico', // Ensure this matches your file in the public folder
+    icon: '/favicon.ico', 
   },
 };
 
